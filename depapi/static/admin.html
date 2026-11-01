@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DepAPI Admin</title>
+<style>
+:root {
+  --bg: #0f1117;
+  --surface: #1a1d27;
+  --surface-2: #141726;
+  --border: #2d3148;
+  --accent: #4f6ef7;
+  --accent-hover: #6b84f9;
+  --text: #e2e8f0;
+  --muted: #8892a4;
+  --ok: #4ade80;
+  --err: #e05b5b;
+  --warn: #f59e0b;
+  --radius: 8px;
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --mono: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 14px;
+  min-height: 100vh;
+}
+.login-screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  z-index: 1000;
+}
+.login-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 32px;
+  width: 400px;
+  max-width: 90vw;
+}
+.login-box h1 { font-size: 24px; margin-bottom: 8px; color: var(--accent); }
+.login-box p { color: var(--muted); margin-bottom: 24px; font-size: 13px; }
+.login-box input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  font-family: var(--mono);
+  margin-bottom: 12px;
+  outline: none;
+}
+.login-box input:focus { border-color: var(--accent); }
+.layout { display: none; min-height: 100vh; }
+.layout.visible { display: flex; }
+.sidebar {
+  width: 240px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 20px 12px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+.brand {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent);
+  padding: 0 8px 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.brand-badge {
+  background: var(--accent);
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+.nav { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.nav-item {
+  padding: 10px 12px;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  user-select: none;
+}
+.nav-item:hover { background: var(--surface-2); color: var(--text); }
+.nav-item.active { background: var(--surface-2); color: var(--accent); }
+.nav-item .icon { width: 16px; text-align: center; }
+.sidebar-footer {
+  padding: 12px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.logout-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.logout-btn:hover { color: var(--err); border-color: var(--err); }
+.main { flex: 1; overflow-y: auto; padding: 24px 32px; }
+.header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+.header h1 { font-size: 24px; font-weight: 600; }
+.header-actions { display: flex; gap: 8px; }
+.btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.15s;
+}
+.btn:hover { background: var(--accent-hover); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-secondary {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover { color: var(--text); border-color: var(--muted); background: transparent; }
+.btn-danger { background: var(--err); }
+.btn-danger:hover { background: #d64545; }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+.table-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 12px 16px; text-align: left; font-size: 13px; }
+th {
+  background: var(--surface-2);
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--border);
+}
+tbody tr { border-bottom: 1px solid var(--border); }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: var(--surface-2); }
+td.mono { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.empty { padding: 40px; text-align: center; color: var(--muted); }
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+}
+.badge-ok { background: rgba(74, 222, 128, 0.15); color: var(--ok); }
+.badge-err { background: rgba(224, 91, 91, 0.15); color: var(--err); }
+.badge-warn { background: rgba(245, 158, 11, 0.15); color: var(--warn); }
+.badge-muted { background: var(--surface-2); color: var(--muted); }
+.form-row { margin-bottom: 16px; }
+.form-row label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+.form-row input, .form-row select, .form-row textarea {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+}
+.form-row input:focus, .form-row select:focus, .form-row textarea:focus {
+  border-color: var(--accent);
+}
+.form-row textarea { font-family: var(--mono); min-height: 70px; resize: vertical; }
+.form-row .hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  width: 500px;
+  max-width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.modal h2 { font-size: 18px; margin-bottom: 20px; }
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 200;
+}
+.toast {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  padding: 12px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  min-width: 200px;
+  animation: slideIn 0.2s ease;
+}
+.toast.ok { border-left-color: var(--ok); }
+.toast.err { border-left-color: var(--err); }
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+.stat-value {
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+.stat-label {
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.key-display {
+  background: var(--bg);
+  border: 1px solid var(--warn);
+  border-radius: var(--radius);
+  padding: 12px;
+  font-family: var(--mono);
+  font-size: 12px;
+  word-break: break-all;
+  color: var(--warn);
+  margin: 12px 0;
+}
+.warn-box {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid var(--warn);
+  border-radius: var(--radius);
+  padding: 12px;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+.warn-box strong { color: var(--warn); }
+.row-actions { display: flex; gap: 4px; flex-wrap: wrap; }
+.hidden { display: none !important; }
+.loading { padding: 40px; text-align: center; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<div class="login-screen" id="loginScreen" style="display:none">
+  <div class="login-box">
+    <h1>DepAPI Admin</h1>
+    <p>Enter your admin token to manage clients, tokens and sessions.</p>
+    <input type="password" id="tokenInput" placeholder="adm-... or root token" autocomplete="off">
+    <button class="btn" style="width:100%" onclick="login()">Sign In</button>
+    <p style="margin-top: 16px; font-size: 12px; text-align: center;">
+      Token is stored in your browser only.
+    </p>
+  </div>
+</div>
+
+<div class="layout" id="layout">
+  <aside class="sidebar">
+    <div class="brand">
+      <span>DepAPI</span>
+      <span class="brand-badge">ADMIN</span>
+    </div>
+    <nav class="nav">
+      <div class="nav-item active" data-section="dashboard"><span class="icon">📊</span> Dashboard</div>
+      <div class="nav-item" data-section="clients"><span class="icon">👥</span> Clients</div>
+      <div class="nav-item" data-section="tokens"><span class="icon">🔑</span> DeepSeek Tokens</div>
+      <div class="nav-item" data-section="sessions"><span class="icon">💬</span> Sessions</div>
+      <div class="nav-item" data-section="bans"><span class="icon">🚫</span> Bans</div>
+      <div class="nav-item" data-section="admin-keys"><span class="icon">🛡️</span> Admin Keys</div>
+      <div class="nav-item" data-section="webhooks"><span class="icon">🔔</span> Webhooks</div>
+      <div class="nav-item" data-section="audit"><span class="icon">📝</span> Audit Log</div>
+    </nav>
+    <div class="sidebar-footer">
+      <div id="actorInfo">Not signed in</div>
+      <button class="logout-btn" onclick="logout()">Sign Out</button>
+    </div>
+  </aside>
+  <main class="main" id="main"></main>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+const state = {
+  token: localStorage.getItem('depapi_admin_token') || '',
+  info: null,
+  section: 'dashboard',
+};
+
+async function api(path, options = {}) {
+  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+  if (state.token.startsWith('adm-')) {
+    headers['X-Admin-Key'] = state.token;
+  } else {
+    headers['X-Admin-Token'] = state.token;
+  }
+  const res = await fetch(path, { ...options, headers });
+  let body = null;
+  try { body = await res.json(); } catch {}
+  if (!res.ok) {
+    const msg = (body && (body.detail || body.error)) || `HTTP ${res.status}`;
+    throw new Error(msg);
+  }
+  return body;
+}
+
+function toast(msg, type = 'ok') {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+async function login() {
+  const inp = document.getElementById('tokenInput');
+  const tok = inp.value.trim();
+  if (!tok) return;
+  state.token = tok;
+  try {
+    const info = await api('/admin/info');
+    state.info = info;
+    localStorage.setItem('depapi_admin_token', tok);
+    showApp();
+  } catch (e) {
+    state.token = '';
+    toast('Login failed: ' + e.message, 'err');
+  }
+}
+
+function logout() {
+  state.token = '';
+  state.info = null;
+  localStorage.removeItem('depapi_admin_token');
+  document.getElementById('layout').classList.remove('visible');
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('tokenInput').value = '';
+}
+
+function showApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('layout').classList.add('visible');
+  const actor = state.info?.actor || 'unknown';
+  const scopes = (state.info?.scopes || []).length;
+  document.getElementById('actorInfo').innerHTML =
+    `<div style="color:var(--text)">${escapeHtml(actor)}</div><div>${scopes} scopes</div>`;
+  navigate('dashboard');
+}
+
+function navigate(section) {
+  state.section = section;
+  document.querySelectorAll('.nav-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.section === section);
+  });
+  const main = document.getElementById('main');
+  main.innerHTML = '<div class="loading">Loading...</div>';
+  const routes = {
+    'dashboard': renderDashboard,
+    'clients': renderClients,
+    'tokens': renderTokens,
+    'sessions': renderSessions,
+    'bans': renderBans,
+    'admin-keys': renderAdminKeys,
+    'webhooks': renderWebhooks,
+    'audit': renderAudit,
+  };
+  (routes[section] || renderDashboard)(main);
+}
+
+document.querySelectorAll('.nav-item').forEach(el => {
+  el.addEventListener('click', () => navigate(el.dataset.section));
+});
+
+async function renderDashboard(main) {
+  try {
+    const info = await api('/admin/info');
+    state.info = info;
+    const c = info.counts;
+    main.innerHTML = `
+      <div class="header">
+        <h1>Dashboard</h1>
+        <div class="header-actions">
+          <button class="btn btn-secondary btn-sm" onclick="navigate('dashboard')">Refresh</button>
+        </div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-value">${c.clients}</div><div class="stat-label">Active Clients</div></div>
+        <div class="stat-card"><div class="stat-value">${c.tokens}</div><div class="stat-label">DeepSeek Tokens</div></div>
+        <div class="stat-card"><div class="stat-value">${c.sessions}</div><div class="stat-label">Sessions</div></div>
+        <div class="stat-card"><div class="stat-value">${c.admin_keys}</div><div class="stat-label">Admin Keys</div></div>
+        <div class="stat-card"><div class="stat-value">${c.webhooks}</div><div class="stat-label">Webhooks</div></div>
+      </div>
+      <div class="table-wrap" style="padding: 20px;">
+        <h3 style="margin-bottom: 12px; font-size: 14px; color: var(--muted);">Your Access</h3>
+        <div><strong>Actor:</strong> ${escapeHtml(info.actor)}</div>
+        <div style="margin-top: 8px;"><strong>Scopes:</strong></div>
+        <div style="margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px;">
+          ${info.scopes.map(s => `<span class="badge badge-muted">${s}</span>`).join('')}
+        </div>
+        <div style="margin-top: 20px;"><strong>Webhook Events:</strong></div>
+        <div style="margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px;">
+          ${info.events.map(e => `<span class="badge badge-muted">${e}</span>`).join('')}
+        </div>
+      </div>
+    `;
+  } catch (e) {
+    main.innerHTML = `<div class="empty">Error: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+async function renderClients(main) {
+  try {
+    const data = await api('/admin/clients?limit=200');
+    main.innerHTML = `
+      <div class="header">
+        <h1>Clients</h1>
+        <div class="header-actions"><button class="btn" onclick="showCreateClient()">+ New Client</button></div>
+      </div>
+      <div class="table-wrap">
+        ${data.clients.length === 0 ? '<div class="empty">No clients yet</div>' : `
+        <table>
+          <thead><tr>
+            <th>ID</th><th>Name</th><th>External</th><th>Key</th>
+            <th>RPS</th><th>Daily</th><th>Status</th><th>Last Used</th><th></th>
+          </tr></thead>
+          <tbody>
+            ${data.clients.map(c => `
+              <tr>
+                <td>${c.id}</td>
+                <td><strong>${escapeHtml(c.name)}</strong></td>
+                <td class="mono">${escapeHtml(c.external_id || '—')}</td>
+                <td class="mono">${escapeHtml(c.key_prefix)}...</td>
+                <td>${c.rps}</td>
+                <td>${c.daily}</td>
+                <td>${c.active ? '<span class="badge badge-ok">active</span>' : '<span class="badge badge-err">inactive</span>'}</td>
+                <td class="mono">${escapeHtml(c.last_used_at || '—')}</td>
+                <td><div class="row-actions">
+                  <button class="btn btn-secondary btn-sm" onclick="editClient(${c.id})">Edit</button>
+                  <button class="btn btn-secondary btn-sm" onclick="rotateClientKey(${c.id})">Rotate</button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteClient(${c.id}, '${escapeHtml(c.name)}')">Del</button>
+                </div></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>`}
+      </div>
+    `;
+  } catch (e) {
+    main.innerHTML = `<div class="empty">Error: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function showCreateClient() {
+  showModal('New Client', `
+    <div class="form-row"><label>Name (unique)</label><input id="c-name" placeholder="alice"></div>
+    <div class="form-row"><label>External ID (optional)</label><input id="c-ext" placeholder="user_42"></div>
+    <div class="form-row"><label>RPS limit</label><input id="c-rps" type="number" value="5"></div>
+    <div class="form-row"><label>Daily limit</label><input id="c-daily" type="number" value="1000"></div>
+    <div class="form-row"><label>Expires at (optional ISO)</label><input id="c-exp" placeholder="2027-01-01T00:00:00Z"></div>
+    <div class="form-row"><label>Notes</label><textarea id="c-notes"></textarea></div>
+  `, async () => {
+    const body = {
+      name: document.getElementById('c-name').value.trim(),
+      external_id: document.getElementById('c-ext').value.trim() || null,
+      rps: parseInt(document.getElementById('c-rps').value) || 5,
+      daily: parseInt(document.getElementById('c-daily').value) || 1000,
+      expires_at: document.getElementById('c-exp').value.trim() || null,
+      notes: document.getElementById('c-notes').value.trim() || null,
+    };
+    const res = await api('/admin/clients', { method: 'POST', body: JSON.stringify(body) });
+    showKeyModal('Client Created', res.key, `Save this key for "${escapeHtml(res.name)}"`);
+  });
+}
+
+async function editClient(cid) {
+  try {
+    const c = await api(`/admin/clients/${cid}`);
+    showModal(`Edit Client: ${escapeHtml(c.name)}`, `
+      <div class="form-row"><label>RPS limit</label><input id="e-rps" type="number" value="${c.rps}"></div>
+      <div class="form-row"><label>Daily limit</label><input id="e-daily" type="number" value="${c.daily}"></div>
+      <div class="form-row"><label>Status</label><select id="e-active">
+        <option value="1" ${c.active?'selected':''}>Active</option>
+        <option value="0" ${!c.active?'selected':''}>Inactive</option>
+      </select></div>
+      <div class="form-row"><label>External ID</label><input id="e-ext" value="${escapeHtml(c.external_id || '')}"></div>
+      <div class="form-row"><label>Expires at (blank = never)</label><input id="e-exp" value="${escapeHtml(c.expires_at || '')}"></div>
+      <div class="form-row"><label>Notes</label><textarea id="e-notes">${escapeHtml(c.notes || '')}</textarea></div>
+    `, async () => {
+      const body = {
+        rps: parseInt(document.getElementById('e-rps').value) || 5,
+        daily: parseInt(document.getElementById('e-daily').value) || 1000,
+        active: document.getElementById('e-active').value === '1',
+        external_id: document.getElementById('e-ext').value.trim() || null,
+        expires_at: document.getElementById('e-exp').value.trim() || null,
+        notes: document.getElementById('e-notes').value.trim() || null,
+      };
+      await api(`/admin/clients/${cid}`, { method: 'PATCH', body: JSON.stringify(body) });
+      toast('Client updated');
+      closeModal();
+      navigate('clients');
+    });
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function rotateClientKey(cid) {
+  showModal('Rotate Client Key', `
+    <p style="margin-bottom: 16px; color: var(--muted);">Generate a new key. Choose how long the old key remains valid.</p>
+    <div class="form-row"><label>Grace period (hours)</label><input id="r-grace" type="number" value="0" min="0"><div class="hint">0 = old key invalid immediately</div></div>
+  `, async () => {
+    const hours = parseInt(document.getElementById('r-grace').value) || 0;
+    const res = await api(`/admin/clients/${cid}/rotate`, {
+      method: 'POST', body: JSON.stringify({ grace_hours: hours }),
+    });
+    showKeyModal('New Key Generated', res.key,
+      hours > 0 ? `Old key valid for ${hours}h more` : 'Old key is now invalid');
+  });
+}
+
+async function deleteClient(cid, name) {
+  if (!confirm(`Deactivate client "${name}"?`)) return;
+  try {
+    await api(`/admin/clients/${cid}?purge_sessions=false`, { method: 'DELETE' });
+    toast('Client deactivated');
+    navigate('clients');
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function renderTokens(main) {
+  try {
+    const data = await api('/admin/tokens');
+    main.innerHTML = `
+      <div class="header">
+        <h1>DeepSeek Tokens</h1>
+        <div class="header-actions"><button class="btn" onclick="showAddToken()">+ Add Token</button></div>
+      </div>
+      <div class="table-wrap">
+        ${data.tokens.length === 0 ? '<div class="empty">No tokens configured</div>' : `
+        <table>
+          <thead><tr>
+            <th>ID</th><th>Label</th><th>Session</th><th>Status</th><th>Errors</th><th>Cooldown</th><th></th>
+          </tr></thead>
+          <tbody>
+            ${data.tokens.map(t => {
+              const cd = t.cooldown_until > Date.now()/1000
+                ? `${Math.ceil((t.cooldown_until - Date.now()/1000)/60)}m left` : '—';
+              return `<tr>
+                <td>${t.id}</td>
+                <td><strong>${escapeHtml(t.label || '—')}</strong></td>
+                <td class="mono">${escapeHtml(t.session_id.slice(0, 16))}...</td>
+                <td>${t.active ? '<span class="badge badge-ok">active</span>' : '<span class="badge badge-err">inactive</span>'}</td>
+                <td>${t.error_count > 0 ? `<span class="badge badge-warn">${t.error_count}</span>` : '0'}</td>
+                <td>${cd !== '—' ? `<span class="badge badge-warn">${cd}</span>` : '—'}</td>
+                <td><div class="row-actions">
+                  ${t.active
+                    ? `<button class="btn btn-secondary btn-sm" onclick="deactivateToken(${t.id})">Deactivate</button>`
+                    : `<button class="btn btn-secondary btn-sm" onclick="activateToken(${t.id})">Activate</button>`}
+                  <button class="btn btn-secondary btn-sm" onclick="resetTokenErrors(${t.id})">Reset</button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteToken(${t.id})">Del</button>
+                </div></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>`}
+      </div>
+    `;
+  } catch (e) { main.innerHTML = `<div class="empty">Error: ${escapeHtml(e.message)}</div>`; }
+}
+
+function showAddToken() {
+  showModal('Add DeepSeek Token', `
+    <div class="form-row"><label>Label (optional)</label><input id="t-label" placeholder="acc1"></div>
+    <div class="form-row"><label>ds_session_id</label><input id="t-session" placeholder="35a1b2c3d4e5f6..."></div>
+    <div class="form-row"><label>Authorization Token</label><input id="t-auth" placeholder="Bearer smK9x..."><div class="hint">Bearer prefix optional</div></div>
+  `, async () => {
+    const body = {
+      session_id: document.getElementById('t-session').value.trim(),
+      auth_token: document.getElementById('t-auth').value.trim(),
+      label: document.getElementById('t-label').value.trim() || null,
+    };
+    await api('/admin/tokens', { method: 'POST', body: JSON.stringify(body) });
+    toast('Token added');
+    closeModal();
+    navigate('tokens');
+  });
+}
+
+async function deactivateToken(tid) {
+  try { await api(`/admin/tokens/${tid}`, { method: 'PATCH', body: JSON.stringify({ active: false }) }); toast('Deactivated'); navigate('tokens'); }
+  catch (e) { toast(e.message, 'err'); }
+}
+async function activateToken(tid) {
+  try { await api(`/admin/tokens/${tid}`, { method: 'PATCH', body: JSON.stringify({ active: true }) }); toast('Activated'); navigate('tokens'); }
+  catch (e) { toast(e.message, 'err'); }
+}
+async function resetTokenErrors(tid) {
+  try { await api(`/admin/tokens/${tid}/reset-errors`, { method: 'POST' }); toast('Errors reset'); navigate('tokens'); }
+  catch (e) { toast(e.message, 'err'); }
+}
+async function deleteToken(tid) {
+  if (!confirm('Delete this token permanently?')) return;
+  try { await api(`/admin/tokens/${tid}`, { method: 'DELETE' }); toast('Deleted'); navigate('tokens'); }
+  catch (e) { toast(e.message, 'err'); }
+}
+
+async function renderSessions(main) {
+  try {
+    const data = await api('/admin/sessions?limit=200');
+    main.innerHTML = `
+      <div class="header"><h1>Sessions</h1></div>
+      <div class="table-wrap">
+        ${data.sessions.length === 0 ? '<div class="empty">No sessions yet</div>' : `
+        <table>
+          <thead><tr><th>Owner</th><th>Session Key</th><th>Token</th><th>Context</th><th>Last Used</th><th></th></tr></thead>
+          <tbody>
+            ${data.sessions.map(s => `<tr>
+              <td><strong>${escapeHtml(s.owner)}</strong></td>
+              <td class="mono">${escapeHtml(s.session_key)}</td>
+              <td class="mono">${escapeHtml(s.token_label || '—')}</td>
+              <td>${s.ds_parent_message_id ? '<span class="badge badge-ok">yes</span>' : '<span class="badge badge-muted">empty</span>'}</td>
+              <td class="mono">${escapeHtml(s.last_used_at || '—')}</td>
+              <td><button class="btn btn-danger btn-sm" onclick="resetSession(${s.id})">Reset</button></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>`}
+      </div>
+    `;
+  } catch (e) { main.innerHTML = `<div class="empty">Error: ${escapeHtml(e.message)}</div>`; }
+}
+
+async function resetSession(sid) {
+  if (!confirm('Reset this session? Context will be lost.')) return;
+  try { await api(`/admin/sessions/${sid}`, { method: 'DELETE' }); toast('Session reset'); navigate('sessions'); }
+  catch (e) { toast(e.message, 'err'); }
+}
+
+async function renderAdminKeys(main) {
+  try {
+    const data = await api('/admin/keys');
+    main.innerHTML = `
+      <div class="header">
+        <h1>Admin Keys</h1>
+        <div class="header-actions"><button class="btn" onclick="showCreateAdminKey()">+ New Admin Key</button></div>
+      </div>
+      <div class="table-wrap">
+        ${data.keys.length === 0 ? '<div class="empty">No admin keys yet</div>' : `
+        <table>
+          <thead><tr><th>ID</th><th>Name</th><th>Key</th><th>Scopes</th><th>Status</th><th>Expires</th><th></th></tr></thead>
+          <tbody>
+            ${data.keys.map(k => `<tr>
+              <td>${k.id}</td>
+              <td><strong>${escapeHtml(k.name)}</strong></td>
+              <td class="mono">${escapeHtml(k.key_prefix)}...</td>
+              <td>${k.scopes.slice(0, 3).map(s => `<span class="badge badge-muted">${s}</span>`).join(' ')}${k.scopes.length > 3 ? ` <span class="badge badge-muted">+${k.scopes.length - 3}</span>` : ''}</td>
+              <td>${k.active ? '<span class="badge badge-ok">active</span>' : '<span class="badge badge-err">inactive</span>'}</td>
+              <td class="mono">${escapeHtml(k.expires_at || '—')}</td>
+              <td><button class="btn btn-danger btn-sm" onclick="deleteAdminKey(${k.id})">Del</button></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>`}
+      </div>
+    `;
+  } catch (e) { main.innerHTML = `<div class="empty">Error: ${escapeHtml(e.message)}</div>`; }
+}
+
+function showCreateAdminKey() {
+  showModal('Create Admin Key', `
+    <div class="form-row"><label>Name (unique)</label><input id="k-name" placeholder="billing-bot"></div>
+    <div class="form-row"><label>Role preset</label><select id="k-role">
+      <option value="">-- custom scopes --</option>
+      <option value="readonly">readonly (all :read)</option>
+      <option value="admin">admin (all except admin_keys:write)</option>
+      <option value="root">root (everything)</option>
+    </select></div>
+    <div class="form-row"><label>Scopes (comma-separated)</label><input id="k-scopes" placeholder="clients:read, clients:write"></div>
+    <div class="form-row"><label>Expires at (optional ISO)</label><input id="k-exp" placeholder="2027-01-01T00:00:00Z"></div>
+  `, async () => {
+    const role = document.getElementById('k-role').value;
+    const scopesRaw = document.getElementById('k-scopes').value.trim();
+    const body = {
+      name: document.getElementById('k-name').value.trim(),
+      expires_at: document.getElementById('k-exp').value.trim() || null,
+    };
+    if (role) body.role = role;
+    else if (scopesRaw) body.scopes = scopesRaw.split(',').map(s => s.trim()).filter(Boolean);
+    const res = await api('/admin/keys', { method: 'POST', body: JSON.stringify(body) });
+    showKeyModal('Admin Key Created', res.key, `Scopes: ${res.scopes.join(', ')}`);
+  });
+}
+
+async function deleteAdminKey(kid) {
+  if (!confirm('Deactivate this admin key?')) return;
+  try { await api(`/admin/keys/${kid}`, { method: 'DELETE' }); toast('Key deactivated'); navigate('admin-keys'); }
+  catch (e) { toast(e.message, 'err'); }
+}
+
+async function renderWebhooks(main) {
+  try {
+    const data = await api('/admin/webhooks');
+    main.innerHTML = `
+      <div class="header">
+        <h1>Webhooks</h1>
+        <div class="header-actions"><button class="btn" onclick="showCreateWebhook()">+ New Webhook</button></div>
+      </div>
+      <div class="table-wrap">
+        ${data.webhooks.length === 0 ? '<div class="empty">No webhooks configured</div>' : `
+        <table>
+          <thead><tr><th>ID</th><th>Name</th><th>URL</th><th>Events</th><th>Last Status</th><th></th></tr></thead>
+          <tbody>
+            ${data.webhooks.map(w => `<tr>
+              <td>${w.id}</td>
+              <td><strong>${escapeHtml(w.name)}</strong></td>
+              <td class="mono" style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(w.url)}</td>
+              <td>${w.events.slice(0, 2).map(e => `<span class="badge badge-muted">${e}</span>`).join(' ')}${w.events.length > 2 ? ` <span class="badge badge-muted">+${w.events.length - 2}</span>` : ''}</td>
+              <td>${w.last_status ? `<span class="badge ${w.last_status < 400 ? 'badge-ok' : 'badge-err'}">${w.last_status}</span>` : '<span class="badge badge-muted">never</span>'}</td>
+              <td><div class="row-actions">
+                <button class="btn btn-secondary btn-sm" onclick="testWebhook(${w.id})">Test</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteWebhook(${w.id})">Del</button>
+              </div></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>`}
+      </div>
+    `;
+  } catch (e) { main.innerHTML = `<div class="empty">Error: ${escapeHtml(e.message)}</div>`; }
+}
+
+function showCreateWebhook() {
+  showModal('Create Webhook', `
+    <div class="form-row"><label>Name</label><input id="w-name" placeholder="slack"></div>
+    <div class="form-row"><label>URL</label><input id="w-url" placeholder="https://example.com/hook"></div>
+    <div class="form-row"><label>Events (comma-separated, * for all)</label><input id="w-events" value="*"><div class="hint">Available: ${state.info.events.join(', ')}</div></div>
+  `, async () => {
+    const eventsRaw = document.getElementById('w-events').value.trim() || '*';
+    const body = {
+      name: document.getElementById('w-name').value.trim(),
+      url: document.getElementById('w-url').value.trim(),
+      events: eventsRaw.split(',').map(s => s.trim()).filter(Boolean),
+    };
+    const res = await api('/admin/webhooks', { method: 'POST', body: JSON.stringify(body) });
+    showKeyModal('Webhook Created', res.secret, `Signature secret for "${escapeHtml(res.name)}". Verify with X-DepAPI-Signature header.`);
+  });
+}
+
+async function testWebhook(wid) {
+  try { await api(`/admin/webhooks/${wid}/test`, { method: 'POST' }); toast('Test event dispatched'); }
+  catch (e) { toast(e.message, 'err'); }
+}
+async function deleteWebhook(wid) {
+  if (!confirm('Delete this webhook?')) return;
+  try { await api(`/admin/webhooks/${wid}`, { method: 'DELETE' }); toast('Deleted'); navigate('webhooks'); }
+  catch (e) { toast(e.message, 'err'); }
+}
+
+async function renderAudit(main) {
+  try {
+    const data = await api('/admin/audit?limit=100');
+    main.innerHTML = `
+      <div class="header">
+        <h1>Audit Log</h1>
+        <div class="header-actions"><button class="btn btn-secondary" onclick="navigate('audit')">Refresh</button></div>
+      </div>
+      <div class="table-wrap">
+        ${data.audit.length === 0 ? '<div class="empty">No audit entries</div>' : `
+        <table>
+          <thead><tr><th>Time</th><th>Actor</th><th>Action</th><th>Target</th><th>Details</th><th>IP</th></tr></thead>
+          <tbody>
+            ${data.audit.map(a => `<tr>
+              <td class="mono">${escapeHtml(a.ts)}</td>
+              <td><strong>${escapeHtml(a.actor)}</strong></td>
+              <td><span class="badge badge-muted">${escapeHtml(a.action)}</span></td>
+              <td class="mono">${escapeHtml(a.target || '—')}</td>
+              <td class="mono" style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(a.details || '')}</td>
+              <td class="mono">${escapeHtml(a.ip || '—')}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>`}
+      </div>
+    `;
+  } catch (e) { main.innerHTML = `<div class="empty">Error: ${escapeHtml(e.message)}</div>`; }
+}
+
+async function renderBans(main) {
+  try {
+    const data = await api('/admin/bans?limit=500');
+    const items = data.bans || [];
+    main.innerHTML = `
+      <div class="header">
+        <h1>Bans</h1>
+        <div class="header-actions">
+          <button class="btn btn-secondary" onclick="showCheckBan()">Check</button>
+          <button class="btn" onclick="showCreateBan()">+ New Ban</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        ${items.length === 0 ? '<div class="empty">No bans</div>' : `
+        <table>
+          <thead><tr>
+            <th>ID</th><th>Kind</th><th>Pattern</th><th>Reason</th>
+            <th>Expires</th><th>Status</th><th></th>
+          </tr></thead>
+          <tbody>
+            ${items.map(b => {
+              const expired = b.expires_at && new Date(b.expires_at) <= new Date();
+              const statusBadge = !b.active
+                ? '<span class="badge badge-muted">inactive</span>'
+                : (expired
+                    ? '<span class="badge badge-warn">expired</span>'
+                    : '<span class="badge badge-err">active</span>');
+              return `<tr>
+                <td>${b.id}</td>
+                <td><span class="badge badge-muted">${escapeHtml(b.kind)}</span></td>
+                <td class="mono">${escapeHtml(b.pattern || '(empty)')}</td>
+                <td>${escapeHtml(b.reason || '—')}</td>
+                <td class="mono">${escapeHtml(b.expires_at || 'never')}</td>
+                <td>${statusBadge}</td>
+                <td><div class="row-actions">
+                  <button class="btn btn-secondary btn-sm" onclick="toggleBan(${b.id}, ${b.active})">${b.active ? 'Disable' : 'Enable'}</button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteBan(${b.id})">Del</button>
+                </div></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>`}
+      </div>
+    `;
+  } catch (e) { main.innerHTML = `<div class="empty">Error: ${escapeHtml(e.message)}</div>`; }
+}
+
+function showCreateBan() {
+  showModal('New Ban', `
+    <div class="form-row"><label>Kind</label><select id="b-kind">
+      <option value="ip">IP / CIDR / glob</option>
+      <option value="ua">User-Agent (substring or glob)</option>
+    </select></div>
+    <div class="form-row"><label>Pattern</label>
+      <input id="b-pattern" placeholder="192.168.1.0/24  or  1.2.3.4  or  *bot*">
+      <div class="hint">IP: exact, CIDR (10.0.0.0/8), or glob (192.168.*.*). UA: substring or glob. Empty UA pattern bans empty user-agent.</div>
+    </div>
+    <div class="form-row"><label>Reason</label>
+      <input id="b-reason" placeholder="scanner / abuse / test">
+    </div>
+    <div class="form-row"><label>Expires at (optional ISO; blank = permanent)</label>
+      <input id="b-exp" placeholder="2026-12-31T00:00:00Z">
+    </div>
+    <div class="form-row"><label>Notes</label>
+      <textarea id="b-notes"></textarea>
+    </div>
+  `, async () => {
+    const body = {
+      kind: document.getElementById('b-kind').value,
+      pattern: document.getElementById('b-pattern').value,
+      reason: document.getElementById('b-reason').value.trim() || null,
+      expires_at: document.getElementById('b-exp').value.trim() || null,
+      notes: document.getElementById('b-notes').value.trim() || null,
+    };
+    if (!body.pattern && body.kind === 'ip') throw new Error('pattern required for ip');
+    await api('/admin/bans', { method: 'POST', body: JSON.stringify(body) });
+    toast('Ban created');
+    closeModal();
+    navigate('bans');
+  });
+}
+
+function showCheckBan() {
+  showModal('Check IP/UA', `
+    <div class="form-row"><label>IP</label><input id="c-ip" placeholder="1.2.3.4"></div>
+    <div class="form-row"><label>User-Agent</label><input id="c-ua" placeholder="Mozilla/5.0 ..."></div>
+  `, async () => {
+    const ip = document.getElementById('c-ip').value.trim();
+    const ua = document.getElementById('c-ua').value.trim();
+    const qs = new URLSearchParams({ ip, ua }).toString();
+    const res = await api(`/admin/bans/check?${qs}`);
+    if (res.banned) {
+      showKeyModal('Banned',
+        `rule #${res.matched_ban.id}: ${res.matched_ban.kind}=${res.matched_ban.pattern}`,
+        res.matched_ban.reason || '(no reason)');
+    } else {
+      toast('Not banned');
+      closeModal();
+    }
+  });
+}
+
+async function toggleBan(bid, active) {
+  try {
+    await api(`/admin/bans/${bid}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ active: !active }),
+    });
+    toast(active ? 'Ban disabled' : 'Ban enabled');
+    navigate('bans');
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function deleteBan(bid) {
+  if (!confirm('Delete this ban?')) return;
+  try {
+    await api(`/admin/bans/${bid}`, { method: 'DELETE' });
+    toast('Ban deleted');
+    navigate('bans');
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+let currentModalHandler = null;
+
+function showModal(title, content, onSubmit) {
+  closeModal();
+  currentModalHandler = onSubmit;
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id = 'activeModal';
+  overlay.innerHTML = `
+    <div class="modal" onclick="event.stopPropagation()">
+      <h2>${title}</h2>
+      <div>${content}</div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn" onclick="submitModal()">Save</button>
+      </div>
+    </div>
+  `;
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+  document.body.appendChild(overlay);
+}
+
+async function submitModal() {
+  if (!currentModalHandler) return;
+  try { await currentModalHandler(); }
+  catch (e) { toast(e.message, 'err'); }
+}
+
+function closeModal() {
+  const m = document.getElementById('activeModal');
+  if (m) m.remove();
+  currentModalHandler = null;
+}
+
+function showKeyModal(title, key, note) {
+  closeModal();
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id = 'activeModal';
+  overlay.innerHTML = `
+    <div class="modal" onclick="event.stopPropagation()">
+      <h2>${title}</h2>
+      <div class="warn-box"><strong>⚠ Save this now.</strong> It will not be shown again.</div>
+      <div class="key-display" id="keyDisplay">${escapeHtml(key)}</div>
+      <p style="color: var(--muted); font-size: 13px;">${note || ''}</p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="copyKey()">Copy</button>
+        <button class="btn" onclick="closeModal(); navigate(state.section)">Done</button>
+      </div>
+    </div>
+  `;
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+  document.body.appendChild(overlay);
+}
+
+function copyKey() {
+  const el = document.getElementById('keyDisplay');
+  if (!el) return;
+  navigator.clipboard.writeText(el.textContent).then(() => toast('Copied to clipboard'))
+    .catch(() => toast('Copy failed', 'err'));
+}
+
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+(async function() {
+  if (state.token) {
+    try {
+      const info = await api('/admin/info');
+      state.info = info;
+      showApp();
+      return;
+    } catch {
+      state.token = '';
+      localStorage.removeItem('depapi_admin_token');
+    }
+  }
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('tokenInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') login();
+  });
+  setTimeout(() => document.getElementById('tokenInput').focus(), 50);
+})();
+</script>
+</body>
+</html>

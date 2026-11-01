@@ -1,0 +1,12 @@
+wasmtime
+pygments
+pylatexenc
+appdirs
+term-image
+wcwidth
+toml
+requests
+fastapi>=0.110
+uvicorn[standard]>=0.27
+pydantic>=2.5
+python-dotenv>=1.0
