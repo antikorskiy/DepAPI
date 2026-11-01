@@ -490,6 +490,8 @@ DeepSeekAPI/
 
 ## License
 
-Released under the **GNU Affero General Public License v3.0 or later** (AGPL-3.0-or-later). See `LICENSE` for the full text.
+Released under the **GNU General Public License v3.0 or later** (GPL-3.0-or-later). See `LICENSE` for the full text.
 
-Copyright (C) 2025 smkttl.
+Copyright (C) 2026 Antikorskiy.
+
+(P.S Sorry, DeepSeek an idiot.)
