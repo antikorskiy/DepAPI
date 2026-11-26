@@ -110,7 +110,7 @@ DepAPI drives the DeepSeek **web** app, so it needs a browser session, not an AP
 1. Log in to <https://chat.deepseek.com> in your browser.
 2. Open DevTools and read two values:
    - the `ds_session_id` cookie value,
-   - the `Authorization` request header (a `Bearer ...` token).
+   - the `Authorization` request header in "completion" (a `Bearer ...` token).
 3. Register them with DepAPI (either via the CLI or the admin API):
 
    ```
